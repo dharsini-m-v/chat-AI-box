@@ -1,0 +1,19 @@
+const actions = [
+  ["💼", "Careers", "How can I apply for an Accenture job as a fresher?"],
+  ["🤖", "AI & Technology", "Tell me about AI, GenAI, cloud and technology careers at Accenture."],
+  ["📄", "Resume", "How should I improve my resume for an Accenture role?"],
+  ["🎯", "Interview Prep", "How can I prepare for an Accenture interview?"],
+  ["🏢", "About Accenture", "What does Accenture do and what services does it provide?"]
+];
+
+export default function QuickActions({ onSelect }) {
+  return (
+    <div className="quick-actions" aria-label="Quick actions">
+      {actions.map(([icon, label, question]) => (
+        <button key={label} onClick={() => onSelect(question)}>
+          <span>{icon}</span>{label}
+        </button>
+      ))}
+    </div>
+  );
+}
