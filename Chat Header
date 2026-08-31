@@ -1,0 +1,19 @@
+export default function ChatHeader({ onMinimize, onClose }) {
+  return (
+    <header className="chat-header">
+      <div className="assistant-avatar" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <div className="assistant-meta">
+        <strong>Accenture AI Assistant</strong>
+        <span><i className="online-dot" /> Online</span>
+      </div>
+      <div className="header-actions">
+        <button onClick={onMinimize} aria-label="Minimize chat" title="Minimize">−</button>
+        <button onClick={onClose} aria-label="Close chat" title="Close">×</button>
+      </div>
+    </header>
+  );
+}
