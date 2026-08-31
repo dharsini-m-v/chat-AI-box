@@ -1,0 +1,20 @@
+const suggestions = [
+  "What does Accenture do?",
+  "How can I apply for a job?",
+  "What technologies does Accenture use?",
+  "What are the eligibility criteria for freshers?",
+  "What career opportunities are available?",
+  "Tell me about Accenture's services",
+  "How can I prepare for an Accenture interview?",
+  "Tell me about AI and GenAI at Accenture"
+];
+
+export default function SuggestionChips({ onSelect }) {
+  return (
+    <div className="suggestions" aria-label="Suggested questions">
+      {suggestions.map((item) => (
+        <button key={item} onClick={() => onSelect(item)}>{item}</button>
+      ))}
+    </div>
+  );
+}
