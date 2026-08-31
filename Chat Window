@@ -1,0 +1,171 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import ChatHeader from "./ChatHeader";
+import ChatInput from "./ChatInput";
+import ChatMessage from "./ChatMessage";
+import SuggestionChips from "./SuggestionChips";
+import QuickActions from "./QuickActions";
+import TypingIndicator from "./TypingIndicator";
+import { clearMessages, loadMessages, saveMessages } from "../utils/storage";
+import { sendMessage } from "../services/chatService";
+
+const welcome = {
+  id: "welcome",
+  role: "assistant",
+  content: "Hi! 👋 I'm Accenture AI Assistant.\\n\\nHow can I help you today?",
+  timestamp: Date.now()
+};
+
+export default function ChatWindow({ onClose }) {
+  const [messages, setMessages] = useState(() => {
+    const stored = loadMessages();
+    return stored.length ? stored : [welcome];
+  });
+  const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const [error, setError] = useState("");
+  const [showClear, setShowClear] = useState(false);
+  const [minimized, setMinimized] = useState(false);
+  const endRef = useRef(null);
+  const abortRef = useRef(null);
+
+  useEffect(() => saveMessages(messages), [messages]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, thinking]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const hasConversation = useMemo(() => messages.some(m => m.role === "user"), [messages]);
+
+  async function ask(question) {
+    const text = (question ?? input).trim();
+    if (!text || thinking) return;
+    if (text.length > 4000) {
+      setError("Please keep your message under 4,000 characters.");
+      return;
+    }
+
+    setError("");
+    setInput("");
+    const userMessage = { id: crypto.randomUUID(), role: "user", content: text, timestamp: Date.now() };
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
+    setThinking(true);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeout = setTimeout(() => controller.abort(), 32000);
+
+    try {
+      const result = await sendMessage(text, nextMessages, controller.signal);
+      const assistantMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: result.reply,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (err) {
+      const fallback = err.name === "AbortError"
+        ? "The request took too long. Please try again."
+        : "I'm having trouble connecting to the AI service right now. Please try again in a moment.";
+      setError(fallback);
+    } finally {
+      clearTimeout(timeout);
+      setThinking(false);
+      abortRef.current = null;
+    }
+  }
+
+  async function regenerate(message) {
+    const index = messages.findIndex(m => m.id === message.id);
+    const previousUser = [...messages.slice(0, index)].reverse().find(m => m.role === "user");
+    if (previousUser) await ask(previousUser.content);
+  }
+
+  async function copy(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      setError("Copy failed. Please select and copy the response manually.");
+    }
+  }
+
+  function clearConversation() {
+    clearMessages();
+    setMessages([welcome]);
+    setShowClear(false);
+    setError("");
+  }
+
+  if (minimized) {
+    return (
+      <section className="chat-window minimized" aria-label="Accenture AI Assistant">
+        <ChatHeader onMinimize={() => setMinimized(false)} onClose={onClose} />
+      </section>
+    );
+  }
+
+  return (
+    <section className="chat-window" role="dialog" aria-modal="false" aria-label="Accenture AI Assistant">
+      <ChatHeader onMinimize={() => setMinimized(true)} onClose={onClose} />
+
+      <div className="chat-body">
+        <div className="intro-line">
+          <span>YOUR INTELLIGENT WORKPLACE & CAREER COMPANION</span>
+          {hasConversation && (
+            <button className="clear-link" onClick={() => setShowClear(true)}>Clear chat</button>
+          )}
+        </div>
+
+        <div className="messages" role="log" aria-live="polite">
+          {messages.map((message) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              onCopy={copy}
+              onRegenerate={regenerate}
+            />
+          ))}
+          {messages.length === 1 && (
+            <>
+              <SuggestionChips onSelect={ask} />
+              <QuickActions onSelect={ask} />
+            </>
+          )}
+          {thinking && <TypingIndicator />}
+          <div ref={endRef} />
+        </div>
+
+        {error && (
+          <div className="error-banner" role="alert">
+            <span>{error}</span>
+            <button onClick={() => setError("")} aria-label="Dismiss error">×</button>
+          </div>
+        )}
+      </div>
+
+      <ChatInput
+        value={input}
+        onChange={setInput}
+        onSend={() => ask()}
+        disabled={thinking}
+      />
+
+      {showClear && (
+        <div className="confirm-backdrop" role="presentation">
+          <div className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="clear-title">
+            <div className="confirm-icon">↺</div>
+            <h3 id="clear-title">Clear this conversation?</h3>
+            <p>Your saved chat history will be removed from this browser.</p>
+            <div className="confirm-actions">
+              <button onClick={() => setShowClear(false)}>Cancel</button>
+              <button className="danger" onClick={clearConversation}>Clear</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
