@@ -1,0 +1,14 @@
+import { useState } from "react";
+import ChatButton from "./ChatButton";
+import ChatWindow from "./ChatWindow";
+
+export default function ChatWidget() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="chat-widget">
+      {open && <ChatWindow onClose={() => setOpen(false)} />}
+      <ChatButton isOpen={open} onClick={() => setOpen(v => !v)} />
+    </div>
+  );
+}
