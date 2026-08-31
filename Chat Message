@@ -1,0 +1,36 @@
+mport ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+function formatTime(timestamp) {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date(timestamp));
+}
+
+export default function ChatMessage({ message, onCopy, onRegenerate }) {
+  const isUser = message.role === "user";
+  return (
+    <article className={`message-row ${isUser ? "user-row" : "ai-row"}`}>
+      {!isUser && <div className="mini-avatar" aria-hidden="true">✦</div>}
+      <div className="message-stack">
+        <div className={`message-bubble ${isUser ? "user-bubble" : "ai-bubble"}`}>
+          {isUser ? (
+            <p>{message.content}</p>
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+          )}
+        </div>
+        <div className="message-meta">
+          <time dateTime={new Date(message.timestamp).toISOString()}>{formatTime(message.timestamp)}</time>
+          {!isUser && (
+            <div className="message-tools">
+              <button onClick={() => onCopy(message.content)} aria-label="Copy response" title="Copy">⧉</button>
+              <button onClick={() => onRegenerate(message)} aria-label="Regenerate response" title="Regenerate">↻</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
