@@ -1,0 +1,47 @@
+import { useEffect, useRef } from "react";
+
+export default function ChatInput({ value, onChange, onSend, disabled }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = "auto";
+      ref.current.style.height = `${Math.min(ref.current.scrollHeight, 120)}px`;
+    }
+  }, [value]);
+
+  function handleKeyDown(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      onSend();
+    }
+  }
+
+  return (
+    <div className="input-shell">
+      <textarea
+        ref={ref}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Ask me anything..."
+        aria-label="Message Accenture AI Assistant"
+        rows="1"
+        maxLength={4000}
+        disabled={disabled}
+      />
+      <button
+        className="send-button"
+        onClick={onSend}
+        disabled={disabled || !value.trim()}
+        aria-label="Send message"
+      >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="m5 12 14-7-4.2 14-3.1-6.1L5 12Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+          <path d="M11.7 12.9 19 5" stroke="currentColor" strokeWidth="1.8"/>
+        </svg>
+      </button>
+      <small>Enter to send · Shift+Enter for a new line</small>
+    </div>
+  );
+}
