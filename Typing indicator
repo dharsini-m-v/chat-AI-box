@@ -1,0 +1,11 @@
+export default function TypingIndicator() {
+  return (
+    <div className="typing-row" aria-live="polite" aria-label="Accenture AI is thinking">
+      <div className="mini-avatar">✦</div>
+      <div className="typing-bubble">
+        <span>Accenture AI is thinking</span>
+        <i /><i /><i />
+      </div>
+    </div>
+  );
+}
